@@ -30,6 +30,7 @@ const TripMap = () => {
     map.current.addControl(new mapboxgl.NavigationControl());
   });
 
+  // Watch positions
   useEffect(() => {
     let watchId = null;
 
