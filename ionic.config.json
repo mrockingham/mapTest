@@ -1,0 +1,7 @@
+{
+  "name": "mapTest",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}
