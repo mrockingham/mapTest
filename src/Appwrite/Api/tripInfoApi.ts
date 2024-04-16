@@ -7,6 +7,7 @@ export const createTripInfo = async (tripInfo: any) => {
 
     const data ={
         route: [tripInfo.route],
+        stops:[tripInfo.stops],
         tripName: tripInfo.tripName
     }
     try {

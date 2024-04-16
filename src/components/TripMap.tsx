@@ -3,6 +3,8 @@ import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { getSingleTripInfo, createTripInfo } from "../Appwrite/Api/tripInfoApi";
+import { IonButton } from "@ionic/react";
+import CurrentTripInfo from "./currentTripInfo";
 interface ContainerProps {}
 
 const TripMap = () => {
@@ -16,12 +18,14 @@ const TripMap = () => {
   const [stops, setStops] = useState<any>([]);
   const [trips, setTrips] = useState<any>([]);
   const [tripName, setTripName] = useState<string>("");
-  const [stop, setStop] = useState<number>(0);
+  const [stopName, setStopName] = useState<string>("");
 
   const getTripTest = async () => {
     try {
-      const data = await getSingleTripInfo("66185f47afba58aef20f");
+      const data = await getSingleTripInfo("661e9619ce4283b48045");
       console.log("the data", data);
+      console.log("parse route", JSON.parse(data?.route));
+      console.log("parse stops", JSON.parse(data?.stops));
     } catch (err: any) {
       console.log(err);
     }
@@ -38,30 +42,38 @@ const TripMap = () => {
 
   const markStop = () => {
     if (!isTracking || lat === 0 || lng === 0) return; // Add validation as needed
-    const routeData = [lat + 1];
+    const routeData = [lat];
     const newStop = {
-      tripName,
+      stopName,
 
       lat,
       lng,
     };
 
-    setStops((prevStops: any) => [...prevStops, [lng + 1, lat + 1]]);
+    setStops((prevStops: any) => [...prevStops, newStop]);
   };
 
   const saveTrip = async () => {
-    const routeData = JSON.stringify(stops);
+    const stopData = await JSON.stringify(stops);
+    const routeData = await JSON.stringify(route);
 
     console.log("the route data", routeData);
 
     const newTrip = {
+      stops: stopData,
       route: routeData,
       tripName,
     };
 
-    await setTrips(newTrip);
+    try {
+      if (newTrip) {
+        await createTripInfo(newTrip);
+      }
+    } catch (err: any) {
+      throw new Error(err);
+    }
+
     // setTrips((prevTrips: any) => [...prevTrips, newTrip]);
-    await createTripInfo(trips);
     setIsTracking(false); // Stop tracking
     setRoute([]); // Reset the route
     setStops([]); // Reset the stops
@@ -107,10 +119,7 @@ const TripMap = () => {
       const { latitude, longitude } = position.coords;
       setLng(longitude);
       setLat(latitude);
-      setRoute((currentRoute: any) => [
-        ...currentRoute,
-        [longitude + 1, latitude + 1],
-      ]);
+      setRoute((currentRoute: any) => [...currentRoute, [longitude, latitude]]);
 
       if (map.current) {
         map.current.flyTo({
@@ -208,15 +217,25 @@ const TripMap = () => {
       <div>TripName</div>
       <input value={tripName} onChange={(e) => setTripName(e.target.value)} />
       <div></div>
-      <button onClick={toggleTracking}>
+      <IonButton onClick={toggleTracking}>
         {isTracking ? "Stop Tracking" : "Start Tracking"}
-      </button>
+      </IonButton>
       <div ref={mapContainer} style={{ width: "100%", height: "400px" }} />
-      {isTracking && <button onClick={markStop}>Mark Stop</button>}
+      {isTracking && (
+        <>
+          <input
+            value={stopName}
+            onChange={(e) => setStopName(e.target.value)}
+          />
+          <IonButton onClick={markStop}>Mark Stop</IonButton>
+        </>
+      )}
       <div></div>
-      <button onClick={saveTrip}>Save Trip</button>
+      <IonButton onClick={saveTrip}>Save Trip</IonButton>
       <div></div>
-      <button onClick={() => getTripTest()}>getInfo</button>
+      <IonButton onClick={() => getTripTest()}>getInfo</IonButton>
+
+      <CurrentTripInfo routeInfo={route} stopInfo={stops} />
     </div>
   );
 };
